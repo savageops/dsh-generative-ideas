@@ -1,0 +1,4 @@
+# dsh-generative-ideas bundle patch: inserts the dual-face plugin row.
+- insert:
+    - id: rich-ideas
+      name: dsh-generative-ideas

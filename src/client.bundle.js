@@ -30,6 +30,12 @@ window.__ModuleLoader__.load({
 			"action.export": "Export goal.md",
 			"action.exported": "goal.md exported",
 			"action.close": "Close",
+			"action.reroll": "Reroll",
+			"action.reroll.hint": "Generate fresh options — same focus, different strategic stances",
+			"action.push": "Push",
+			"action.push.hint": "Regenerate with deep research forced ON — 12+ competitors, GitHub repos, .refs/",
+			"action.discuss": "Discuss",
+			"action.discuss.hint": "Close this panel and discuss the roadmap direction in chat instead",
 			"action.newRound": "New round",
 			"option.thesis": "thesis",
 			"option.phases": "phases",
@@ -61,6 +67,12 @@ window.__ModuleLoader__.load({
 			"action.export": "导出 goal.md",
 			"action.exported": "goal.md 已导出",
 			"action.close": "关闭",
+			"action.reroll": "重抑",
+			"action.reroll.hint": "同一主题重新生成不同战略立场的选项",
+			"action.push": "深挖",
+			"action.push.hint": "强制开启深度调研重新生成——12+ 竞品、GitHub 仓库、.refs/",
+			"action.discuss": "讨论",
+			"action.discuss.hint": "关闭面板，在聊天中讨论路线图方向",
 			"action.newRound": "再来一轮",
 			"option.thesis": "核心押注",
 			"option.phases": "阶段",
@@ -139,7 +151,11 @@ window.__ModuleLoader__.load({
 .rgi-actionBtn{appearance:none;background:0 0;border:none;border-left:1px solid var(--dsw-alias-border-l1);padding:9px 18px;font:inherit;font-size:13px;line-height:20px;color:var(--dsw-alias-label-secondary);cursor:pointer}
 .rgi-actionBtn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
 .rgi-actionBtn:disabled{opacity:.45;cursor:default}
-.rgi-actionPrimary{color:var(--dsw-alias-state-business-primary);font-weight:500}`;
+.rgi-actionPrimary{color:var(--dsw-alias-state-business-primary);font-weight:500}
+.rgi-preActions{display:flex;align-items:stretch;flex:none;border-left:1px solid var(--dsw-alias-border-l1)}
+.rgi-preBtn{appearance:none;background:0 0;border:none;border-left:1px solid var(--dsw-alias-border-l1);padding:9px 14px;font:inherit;font-size:13px;line-height:20px;color:var(--dsw-alias-label-secondary);cursor:pointer}
+.rgi-preBtn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
+.rgi-preBtn:disabled{opacity:.45;cursor:default}`;
 		const tagId = "dsh-generative-ideas/panel.css";
 		if (typeof document !== "undefined" && document.querySelector(`style[data-plugin-css="${tagId}"]`) === null) {
 			const tag = document.createElement("style");
@@ -490,6 +506,34 @@ window.__ModuleLoader__.load({
 								className: "rgi-footer",
 								children: [
 									(0, react_jsx_runtime.jsx)("span", { className: status?.kind === "error" ? "rgi-status rgi-statusErr" : status?.kind === "ok" ? "rgi-status rgi-statusOk" : "rgi-status", role: status?.kind === "error" ? "alert" : "status", children: status?.text ?? "" }),
+								step === "compare" ? (0, react_jsx_runtime.jsxs)("div", {
+									className: "rgi-preActions",
+									children: [
+										(0, react_jsx_runtime.jsx)("button", {
+											type: "button",
+											className: "rgi-preBtn",
+											title: t("action.reroll.hint"),
+											disabled: busy,
+											onClick: () => { setChosen(null); setStatus(null); generate({ focus, workspace, constraints, horizon, deepResearch }); setStep("generating"); },
+											children: t("action.reroll")
+										}),
+										(0, react_jsx_runtime.jsx)("button", {
+											type: "button",
+											className: "rgi-preBtn",
+											title: t("action.push.hint"),
+											disabled: busy,
+											onClick: () => { setChosen(null); setStatus(null); setDeepResearch(true); generate({ focus, workspace, constraints, horizon, deepResearch: true }); setStep("generating"); },
+											children: t("action.push")
+										}),
+										(0, react_jsx_runtime.jsx)("button", {
+											type: "button",
+											className: "rgi-preBtn",
+											title: t("action.discuss.hint"),
+											onClick: onClose,
+											children: t("action.discuss")
+										})
+									]
+								}) : null,
 									chosen !== null && workspace !== "" && step !== "chosen" ? (0, react_jsx_runtime.jsx)("button", {
 										type: "button",
 										className: "rgi-actionBtn rgi-actionPrimary",

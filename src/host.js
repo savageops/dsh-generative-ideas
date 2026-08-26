@@ -158,6 +158,8 @@ function guard(req, res) {
 export function apply(ctx) {
   /** Session-scoped last generation result (for panel re-open). */
   let lastResult = null
+  /** Background generation state — survives panel close/reopen. */
+  let generationState = { running: false, error: null, startedAt: 0 }
 
   ctx.effect(() => {
     const routes = [
@@ -167,7 +169,7 @@ export function apply(ctx) {
         handler: (req, res) => {
           if (req.method !== 'GET') { writeJson(res, 405, { ok: false, error: 'method-not-allowed' }); return }
           if (!guard(req, res)) return
-          writeJson(res, 200, { ok: true, workspaces: workspaceSlugs(), ...(lastResult !== null ? { lastResult } : {}) })
+          writeJson(res, 200, { ok: true, workspaces: workspaceSlugs(), generating: generationState.running, generateError: generationState.error, ...(lastResult !== null ? { lastResult } : {}) })
         },
       },
       {
@@ -186,13 +188,19 @@ export function apply(ctx) {
             writeJson(res, 400, { ok: false, error: 'focus-required' })
             return
           }
-          try {
-            const options = await generateRoadmaps(body.focus.trim(), body.workspace ?? '', body.constraints ?? '', body.horizon ?? '')
-            lastResult = { focus: body.focus.trim(), workspace: body.workspace ?? '', at: Date.now(), options }
-            writeJson(res, 200, { ok: true, options, at: lastResult.at })
-          } catch (error) {
-            writeJson(res, 500, { ok: false, error: error instanceof Error ? error.message : String(error) })
-          }
+          if (generationState.running) { writeJson(res, 409, { ok: false, error: 'already-generating' }); return }
+          const focus = body.focus.trim()
+          const ws = body.workspace ?? ''
+          generationState = { running: true, error: null, startedAt: Date.now() }
+          writeJson(res, 200, { ok: true, started: true })
+          generateRoadmaps(focus, ws, body.constraints ?? '', body.horizon ?? '')
+            .then((options) => {
+              lastResult = { focus, workspace: ws, at: Date.now(), options }
+              generationState = { running: false, error: null, startedAt: 0 }
+            })
+            .catch((error) => {
+              generationState = { running: false, error: error instanceof Error ? error.message : String(error), startedAt: 0 }
+            })
         },
       },
       {

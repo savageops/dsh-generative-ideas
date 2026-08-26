@@ -73,6 +73,8 @@ window.__ModuleLoader__.load({
 		//#region lib/styles.js
 		const css = `.rgi-entry{appearance:none;display:flex;align-items:center;gap:8px;width:100%;height:36px;padding:0 10px;font:inherit;font-size:13px;line-height:20px;color:var(--dsw-alias-label-secondary);background:0 0;border:none;border-radius:8px;cursor:pointer;text-align:left}
 .rgi-entry:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
+.rgi-entry[data-generating="true"] .rgi-entryIcon{color:var(--dsw-alias-state-business-primary);animation:rgi-entry-pulse 1.5s ease-in-out infinite}
+@keyframes rgi-entry-pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .rgi-entry[data-active="true"]{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}
 .rgi-entryIcon{justify-content:center;align-items:center;width:24px;height:24px;display:inline-flex;flex:none;color:var(--dsw-alias-label-tertiary)}
 .rgi-entryLabel{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -223,6 +225,9 @@ window.__ModuleLoader__.load({
 		async function generate(body) {
 			return api("/generate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) })
 		}
+		async function pollState() {
+			return api("/state", { cache: "no-store" })
+		}
 		async function exportGoal(body) {
 			return api("/export", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) })
 		}
@@ -275,7 +280,7 @@ window.__ModuleLoader__.load({
 			});
 		}
 
-		function IdeasPanel({ onClose }) {
+		function IdeasPanel({ onClose, onGeneratingChange }) {
 			const [step, setStep] = (0, react.useState)("focus");
 			const [state, setState] = (0, react.useState)(null);
 			const [focus, setFocus] = (0, react.useState)("");
@@ -290,6 +295,7 @@ window.__ModuleLoader__.load({
 			(0, react.useEffect)(() => {
 				fetchState().then((body) => {
 					setState(body);
+					if (body.generating) { setStep("generating"); return; }
 					if (body.lastResult?.options?.length > 0) {
 						setOptions(body.lastResult.options);
 						setFocus(body.lastResult.focus ?? "");
@@ -302,15 +308,32 @@ window.__ModuleLoader__.load({
 			const startGeneration = () => {
 				setStep("generating");
 				setStatus(null);
-				setBusy(true);
-				generate({ focus, workspace, constraints, horizon }).then((body) => {
-					setOptions(body.options);
-					setStep("compare");
-				}).catch((cause) => {
+				generate({ focus, workspace, constraints, horizon }).catch((cause) => {
 					setStatus({ kind: "error", text: `${t("error.generic")}: ${cause instanceof Error ? cause.message : String(cause)}` });
 					setStep("focus");
-				}).finally(() => setBusy(false));
+				});
 			};
+			(0, react.useEffect)(() => { onGeneratingChange?.(step === "generating"); }, [step, onGeneratingChange]);
+			// Poll while generating — the host runs the generation as a background
+			// job, so the panel can close and reopen without losing it.
+			(0, react.useEffect)(() => {
+				if (step !== "generating") return;
+				const timer = window.setInterval(() => {
+					pollState().then((body) => {
+						if (body.generating) return;
+						window.clearInterval(timer);
+						if (body.generateError) {
+							setStatus({ kind: "error", text: `${t("error.generic")}: ${body.generateError}` });
+							setStep("focus");
+						} else if (body.lastResult?.options) {
+							setOptions(body.lastResult.options);
+							setFocus(body.lastResult.focus ?? focus);
+							setStep("compare");
+						}
+					}).catch(() => {});
+				}, 3000);
+				return () => window.clearInterval(timer);
+			}, [step]);
 
 			const exportChosen = () => {
 				if (chosen === null || workspace === "") return;
@@ -466,7 +489,17 @@ window.__ModuleLoader__.load({
 			ctx.effect(() => ctx.locale.register(NS, { en, zh }), "rich-ideas: dictionaries");
 
 			let open = false;
+			let generating = false;
 			let listeners = new Set();
+			const setGenerating = (value) => {
+				if (generating === value) return;
+				generating = value;
+				const entry = document.querySelector(`[${ENTRY_ATTR}]`);
+				if (entry !== null) {
+					if (value) entry.setAttribute("data-generating", "true");
+					else entry.removeAttribute("data-generating");
+				}
+			};
 			const isOpen = () => open;
 			const subscribe = (listener) => { listeners.add(listener); return () => listeners.delete(listener); };
 			const setOpen = (value) => {
@@ -483,7 +516,7 @@ window.__ModuleLoader__.load({
 				container.dataset.dshPart = "panel-root";
 				document.body.appendChild(container);
 				root = react_dom_client.createRoot(container);
-				root.render((0, react_jsx_runtime.jsx)(IdeasPanel, { onClose: () => teardownPanel() }));
+				root.render((0, react_jsx_runtime.jsx)(IdeasPanel, { onClose: () => teardownPanel(), onGeneratingChange: setGenerating }));
 			};
 			const teardownPanel = () => {
 				setOpen(false);

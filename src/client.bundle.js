@@ -24,6 +24,8 @@ window.__ModuleLoader__.load({
 			"focus.workspace": "Target workspace",
 			"focus.workspacePlaceholder": "Select a workspace…",
 			"action.generate": "Generate roadmaps",
+			"action.deepResearch": "Deep research — 12+ competitors, open-source repos, .refs/",
+			"action.deepResearchHint": "Before generating, the agent runs aggressive web research: minimum 12 competitors, GitHub repos doing similar things, .refs/ curated research — then grounds every roadmap option in what it found.",
 			"action.generating": "Generating… (30-90s)",
 			"action.export": "Export goal.md",
 			"action.exported": "goal.md exported",
@@ -53,6 +55,8 @@ window.__ModuleLoader__.load({
 			"focus.workspace": "目标工作区",
 			"focus.workspacePlaceholder": "选择工作区…",
 			"action.generate": "生成路线图",
+			"action.deepResearch": "深度调研——12+ 竞品、开源仓库、.refs/",
+			"action.deepResearchHint": "生成前 agent 先做深度网络调研：最少 12 个竞品、GitHub 同类仓库、.refs/ 已有研究——然后据此生成有据可依的路线图。",
 			"action.generating": "生成中…（30-90 秒）",
 			"action.export": "导出 goal.md",
 			"action.exported": "goal.md 已导出",
@@ -100,6 +104,10 @@ window.__ModuleLoader__.load({
 .rgi-row>*{flex:1}
 .rgi-generate{width:100%;padding:10px;background:var(--dsw-alias-state-business-primary);color:#fff;border:none;border-radius:8px;font:inherit;font-size:14px;font-weight:500;cursor:pointer}
 .rgi-generate:hover:not(:disabled){opacity:.9}
+.rgi-deepToggle{display:flex;align-items:center;gap:8px;padding:8px 0 4px;cursor:pointer;user-select:none}
+.rgi-deepCheckbox{width:16px;height:16px;accent-color:var(--dsw-alias-state-business-primary)}
+.rgi-deepLabel{color:var(--dsw-alias-label-secondary);font-size:13px;line-height:18px}
+.rgi-deepHint{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:14px;margin-left:24px}
 .rgi-generate:disabled{opacity:.5;cursor:default}
 .rgi-genState{display:flex;flex-direction:column;align-items:center;gap:12px;padding:40px 0}
 .rgi-genSpinner{width:28px;height:28px;border-radius:50%;border:3px solid var(--dsw-alias-interactive-bg-hover);border-top-color:var(--dsw-alias-state-business-primary);animation:rgi-spin 1s linear infinite}
@@ -291,6 +299,7 @@ window.__ModuleLoader__.load({
 			const [chosen, setChosen] = (0, react.useState)(null);
 			const [status, setStatus] = (0, react.useState)(null);
 			const [busy, setBusy] = (0, react.useState)(false);
+			const [deepResearch, setDeepResearch] = (0, react.useState)(true);
 
 			(0, react.useEffect)(() => {
 				fetchState().then((body) => {
@@ -308,7 +317,7 @@ window.__ModuleLoader__.load({
 			const startGeneration = () => {
 				setStep("generating");
 				setStatus(null);
-				generate({ focus, workspace, constraints, horizon }).catch((cause) => {
+				generate({ focus, workspace, constraints, horizon, deepResearch }).catch((cause) => {
 					setStatus({ kind: "error", text: `${t("error.generic")}: ${cause instanceof Error ? cause.message : String(cause)}` });
 					setStep("focus");
 				});
@@ -429,12 +438,25 @@ window.__ModuleLoader__.load({
 												})
 											]
 										}),
+										(0, react_jsx_runtime.jsxs)("label", {
+											className: "rgi-deepToggle",
+											children: [
+												(0, react_jsx_runtime.jsx)("input", {
+													type: "checkbox",
+													className: "rgi-deepCheckbox",
+													checked: deepResearch,
+													onChange: (event) => setDeepResearch(event.target.checked)
+												}),
+												(0, react_jsx_runtime.jsx)("span", { className: "rgi-deepLabel", children: t("action.deepResearch") })
+											]
+										}),
+										(0, react_jsx_runtime.jsx)("div", { className: "rgi-deepHint", children: t("action.deepResearchHint") }),
 										(0, react_jsx_runtime.jsx)("button", {
 											type: "button",
 											className: "rgi-generate",
 											disabled: focus.trim() === "" || workspace === "",
 											onClick: startGeneration,
-											children: t("action.generate")
+											children: deepResearch ? "[Research] " + t("action.generate") : t("action.generate")
 										})
 									]
 								}) : step === "generating" ? (0, react_jsx_runtime.jsxs)("div", {

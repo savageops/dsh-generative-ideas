@@ -33,6 +33,7 @@ Focus: {{FOCUS}}
 Workspace: {{WORKSPACE}}
 {{CONSTRAINTS}}
 {{HORIZON}}
+{{RESEARCH_MODE}}
 
 Each option must take a genuinely different strategic stance (not just faster/slower variants). For each option provide:
 - name: a short memorable label (like "Blitzscale DX" or "Fortress First")
@@ -41,16 +42,33 @@ Each option must take a genuinely different strategic stance (not just faster/sl
 - risks: 2-3 key risks
 - effort: overall effort (S/M/L)
 - differentiator: what makes this stance different from the others
+{{RESEARCH_DIRECTIVE}}
 
 Respond with ONLY a JSON array of 4 objects — no markdown fences, no commentary. The array is the entire response.`
 
+const DEEP_RESEARCH_DIRECTIVE = `
+
+CRITICAL — DEEP RESEARCH MODE IS ON. Before generating the options above, you MUST:
+1. Search the web AGGRESSIVELY for competitors and comparable products in this space. Find and study a MINIMUM of 12 competitors or comparable implementations. For each, capture what they do differently, their approach, and their key tradeoff.
+2. Search GitHub and code hosting for OPEN-SOURCE repositories doing similar things. Read their READMEs, design docs, and issue trackers for real patterns and hard-won lessons.
+3. Read any .refs/ directory in the workspace for curated research references.
+4. Use ALL of this research to ground your roadmap options in reality: cite specific competitors by name in the thesis and differentiator, reference real patterns in the phases, and name actual risks that competitors have encountered.
+
+Your options should read like they were written by someone who has studied the entire competitive landscape, not someone guessing. Weave the research findings directly into each option's fields — a thesis that names what the best-in-class competitor does differently is worth more than a generic bet.`
+
+const STANDARD_DIRECTIVE = `
+
+Ground each option in what you know about this space — name real tools, real patterns, and real tradeoffs where you can. Do NOT generate generic options that could apply to any project.`
+
 /** Run a headless dsh session to generate roadmap options. */
-function generateRoadmaps(focus, workspace, constraints, horizon) {
+function generateRoadmaps(focus, workspace, constraints, horizon, deepResearch) {
   const prompt = GENERATION_PROMPT
     .replace('{{FOCUS}}', focus)
     .replace('{{WORKSPACE}}', workspace)
     .replace('{{CONSTRAINTS}}', constraints ? `Constraints: ${constraints}` : '')
     .replace('{{HORIZON}}', horizon ? `Horizon: ${horizon}` : '')
+    .replace('{{RESEARCH_MODE}}', deepResearch ? 'DEEP RESEARCH MODE: ON' : '')
+    .replace('{{RESEARCH_DIRECTIVE}}', deepResearch ? DEEP_RESEARCH_DIRECTIVE : STANDARD_DIRECTIVE)
   return new Promise((resolve, reject) => {
     execFile(DSH_BIN, ['--profile', 'headless', prompt], {
       timeout: GENERATE_TIMEOUT_MS,
@@ -193,7 +211,7 @@ export function apply(ctx) {
           const ws = body.workspace ?? ''
           generationState = { running: true, error: null, startedAt: Date.now() }
           writeJson(res, 200, { ok: true, started: true })
-          generateRoadmaps(focus, ws, body.constraints ?? '', body.horizon ?? '')
+          generateRoadmaps(focus, ws, body.constraints ?? '', body.horizon ?? '', body.deepResearch === true)
             .then((options) => {
               lastResult = { focus, workspace: ws, at: Date.now(), options }
               generationState = { running: false, error: null, startedAt: 0 }

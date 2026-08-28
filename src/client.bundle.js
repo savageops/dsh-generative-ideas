@@ -71,7 +71,7 @@ window.__ModuleLoader__.load({
 			"action.exported": "已复制到剪贴板",
 			"action.downloaded": "已下载",
 			"action.close": "关闭",
-			"action.reroll": "重抑",
+			"action.reroll": "重掷",
 			"action.reroll.hint": "同一主题重新生成不同战略立场的选项",
 			"action.push": "深挖",
 			"action.push.hint": "强制开启深度调研重新生成——12+ 竞品、GitHub 仓库、.refs/",
@@ -337,10 +337,11 @@ window.__ModuleLoader__.load({
 			const startGeneration = () => {
 				setStep("generating");
 				setStatus(null);
+				setBusy(true);
 				generate({ focus, workspace, constraints, horizon, deepResearch }).catch((cause) => {
 					setStatus({ kind: "error", text: `${t("error.generic")}: ${cause instanceof Error ? cause.message : String(cause)}` });
 					setStep("focus");
-				});
+				}).finally(() => setBusy(false));
 			};
 			(0, react.useEffect)(() => { onGeneratingChange?.(step === "generating"); }, [step, onGeneratingChange]);
 			// Poll while generating — the host runs the generation as a background
@@ -532,7 +533,7 @@ window.__ModuleLoader__.load({
 											className: "rgi-preBtn",
 											title: t("action.reroll.hint"),
 											disabled: busy,
-											onClick: () => { setChosen(null); setStatus(null); generate({ focus, workspace, constraints, horizon, deepResearch }); setStep("generating"); },
+											onClick: () => { setChosen(null); startGeneration(); },
 											children: t("action.reroll")
 										}),
 										(0, react_jsx_runtime.jsx)("button", {
@@ -540,7 +541,7 @@ window.__ModuleLoader__.load({
 											className: "rgi-preBtn",
 											title: t("action.push.hint"),
 											disabled: busy,
-											onClick: () => { setChosen(null); setStatus(null); setDeepResearch(true); generate({ focus, workspace, constraints, horizon, deepResearch: true }); setStep("generating"); },
+											onClick: () => { setChosen(null); setDeepResearch(true); startGeneration(); },
 											children: t("action.push")
 										}),
 										(0, react_jsx_runtime.jsx)("button", {

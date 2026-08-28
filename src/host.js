@@ -25,7 +25,7 @@ const SESSIONS_DIR = join(DSH_HOME, 'sessions')
 const DSH_BIN = '/opt/cli-dsh-web/node_modules/.bin/dsh'
 
 export const name = 'dsh-generative-ideas'
-export const inject = ['tools', 'webServer', 'agents', 'systemPrompt']
+export const inject = ['tools', 'webServer']
 
 const GENERATION_PROMPT = `You are a roadmap architect. Generate exactly 4 distinct roadmap options for the following focus.
 

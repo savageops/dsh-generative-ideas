@@ -171,7 +171,7 @@ window.__ModuleLoader__.load({
 		//#endregion
 		//#region lib/sidebar.js
 		const ENTRY_ATTR = "data-dsh-generative-ideas-entry";
-		const FAMILY = ["[data-dsh-taskboard-entry]", "[data-dsh-ssh-entry]", "[data-dsh-skill-explorer-entry]", `[${ENTRY_ATTR}]`];
+		const FAMILY = ["[data-dsh-taskboard-entry]", "[data-dsh-ssh-entry]", "[data-dsh-skill-explorer-entry]", "[data-dsh-rich-context-entry]", `[${ENTRY_ATTR}]`];
 		const ICON = "<svg viewBox=\"0 0 16 16\" width=\"18\" height=\"18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M8 1.5a3 3 0 0 1 3 3c0 .8-.3 1.5-.8 2-.5.6-.7 1.2-.7 2v.5h-3v-.5c0-.8-.2-1.4-.7-2-.5-.5-.8-1.2-.8-2a3 3 0 0 1 3-3z\"/><path d=\"M6.5 11.5h3M7 13.5h2\"/></svg>";
 
 		function sidebarRoot() {
